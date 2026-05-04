@@ -1,3 +1,10 @@
+import os
+import json
+import numpy as np
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+
 def load_data(client_id, data_dir, seed=42):
     path = os.path.join(data_dir, f"client_{client_id}", "student_data.csv")
 
