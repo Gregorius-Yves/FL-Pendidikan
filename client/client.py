@@ -1,399 +1,305 @@
 """
-FL Client - Local Model Trainer (VM-1 s/d VM-4)
-================================================
-Mata Kuliah : Sistem Komputasi Terdistribusi
-Topik       : Federated Learning pada Dunia Pendidikan
-Role        : Melatih model lokal dengan data milik kelompok,
-              mengirim weights ke server, menerima global weights.
-
-Jalankan di VM-1 hingga VM-4:
-    python client.py --client_id 1 --server_host <IP_SERVER>
-    python client.py --client_id 2 --server_host <IP_SERVER>
-    python client.py --client_id 3 --server_host <IP_SERVER>
-    python client.py --client_id 4 --server_host <IP_SERVER>
-
-Argumen:
-    --client_id   : ID kelompok (1-4)
-    --server_host : IP address VM server
-    --server_port : Port server (default 9999)
-    --data_dir    : Direktori dataset (default ./data)
-    --rounds      : Jumlah ronde (harus sama dengan server)
+FL Client - VM-1 / Kelompok 1
 """
 
-import argparse
+import os
+import sys
+import json
 import socket
-import pickle
 import struct
+import pickle
+import argparse
+import warnings
 import numpy as np
 import pandas as pd
-import os
-import logging
-import json
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+warnings.filterwarnings("ignore")
+
+from sklearn.linear_model    import LogisticRegression
+from sklearn.preprocessing   import StandardScaler
+from sklearn.metrics         import (
+    accuracy_score, f1_score, precision_score, recall_score,
+    confusion_matrix,
+)
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    accuracy_score, f1_score, classification_report,
-    precision_score, recall_score, confusion_matrix,
-)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [CLIENT-%(client_id)s] %(message)s",
-)
+DEFAULT_SERVER_HOST  = "127.0.0.1"
+DEFAULT_SERVER_PORT  = 9999
+DEFAULT_ROUNDS       = 10
+RANDOM_SEED          = 42
+EARLY_STOP_PATIENCE  = 3
+EARLY_STOP_MIN_DELTA = 0.001
 
 
-# ── Helper framing ────────────────────────────────────────────────────────────
-def send_data(conn: socket.socket, data: bytes):
-    length = struct.pack(">I", len(data))
-    conn.sendall(length + data)
+class FLModelWrapper:
+    def __init__(self):
+        self.scaler      = StandardScaler()
+        self.model       = LogisticRegression(max_iter=500, random_state=RANDOM_SEED, C=1.0, solver="lbfgs")
+        self._is_fitted  = False
+        self._n_features = None
+
+    def get_weights(self):
+        if not self._is_fitted:
+            raise RuntimeError("Model belum dilatih.")
+        return {
+            "coef":      self.model.coef_.flatten().astype(np.float64),
+            "intercept": self.model.intercept_.flatten().astype(np.float64),
+        }
+
+    def set_weights(self, weights_dict):
+        if self._n_features is None:
+            raise RuntimeError("Latih model sekali sebelum set_weights().")
+        coef      = np.array(weights_dict["coef"]).flatten()
+        intercept = np.array(weights_dict["intercept"]).flatten()
+        self.model.coef_      = coef.reshape(1, -1)
+        self.model.intercept_ = intercept.reshape(1,)
+
+    def train(self, X_train, y_train):
+        if not self._is_fitted:
+            X_scaled = self.scaler.fit_transform(X_train)
+        else:
+            X_scaled = self.scaler.transform(X_train)
+        self.model.fit(X_scaled, y_train)
+        self._is_fitted  = True
+        self._n_features = X_train.shape[1]
+        y_pred = self.model.predict(X_scaled)
+        return self._metrics(y_train, y_pred, "train")
+
+    def evaluate(self, X_test, y_test):
+        if not self._is_fitted:
+            raise RuntimeError("Model belum dilatih.")
+        X_scaled = self.scaler.transform(X_test)
+        y_pred   = self.model.predict(X_scaled)
+        return self._metrics(y_test, y_pred, "test")
+
+    def _metrics(self, y_true, y_pred, split):
+        acc  = accuracy_score(y_true, y_pred)
+        f1   = f1_score(y_true, y_pred, average="weighted", zero_division=0)
+        prec = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+        rec  = recall_score(y_true, y_pred, average="weighted", zero_division=0)
+        cm   = confusion_matrix(y_true, y_pred).tolist()
+        return {
+            f"{split}_accuracy":         round(float(acc),  4),
+            f"{split}_f1":               round(float(f1),   4),
+            f"{split}_precision":        round(float(prec), 4),
+            f"{split}_recall":           round(float(rec),  4),
+            f"{split}_confusion_matrix": cm,
+        }
 
 
-def recv_data(conn: socket.socket) -> bytes:
-    raw_len = _recvall(conn, 4)
+class EarlyStopping:
+    def __init__(self, patience=EARLY_STOP_PATIENCE, min_delta=EARLY_STOP_MIN_DELTA):
+        self.patience    = patience
+        self.min_delta   = min_delta
+        self.best_score  = -np.inf
+        self.counter     = 0
+        self.should_stop = False
+
+    def step(self, score):
+        if score > self.best_score + self.min_delta:
+            self.best_score = score
+            self.counter    = 0
+        else:
+            self.counter += 1
+            print(f"  [EarlyStopping] Counter: {self.counter}/{self.patience}")
+            if self.counter >= self.patience:
+                self.should_stop = True
+                print(f"  [EarlyStopping] Dihentikan.")
+        return self.should_stop
+
+
+def send_data(sock, raw):
+    length = struct.pack(">I", len(raw))
+    sock.sendall(length + raw)
+
+
+def recv_data(sock):
+    raw_len = _recvall(sock, 4)
     if not raw_len:
-        return b""
+        raise ConnectionError("Server menutup koneksi.")
     length = struct.unpack(">I", raw_len)[0]
-    return _recvall(conn, length)
+    return _recvall(sock, length)
 
 
-def _recvall(conn: socket.socket, n: int) -> bytes:
+def _recvall(sock, n):
     buf = b""
     while len(buf) < n:
-        chunk = conn.recv(n - len(buf))
+        chunk = sock.recv(n - len(buf))
         if not chunk:
             return b""
         buf += chunk
     return buf
 
 
-# ── Model Wrapper ─────────────────────────────────────────────────────────────
-class FLModelWrapper:
-    """
-    Wrapper untuk model scikit-learn agar bisa digunakan dalam
-    skenario Federated Learning berbasis weight-averaging.
-
-    Karena sklearn tidak memiliki 'weights' seperti neural network,
-    kita gunakan LogisticRegression dengan representasi koefisien
-    sebagai 'weights' yang dapat di-average.
-    """
-
-    def __init__(self, num_features: int, num_classes: int):
-        self.num_features = num_features
-        self.num_classes = num_classes
-
-        # =====================================================================
-        # TODO [CHALLENGE 3 - WAJIB] : Terapkan Model Optimum dari Challenge 0
-        # =====================================================================
-        # Anda sudah menentukan model terbaik di utils/select_model.py
-        # (Challenge C0-C). Sekarang terapkan pilihan tersebut di sini.
-        #
-        # Ganti model default (LogisticRegression) dengan model pilihan Anda:
-        #
-        #   Jika memilih LogisticRegression (direkomendasikan untuk FL):
-        #     → Tidak perlu diubah
-        #
-        #   Jika memilih DecisionTree:
-        #     self.model = DecisionTreeClassifier(max_depth=7, random_state=42)
-        #     → get_weights() dan set_weights() HARUS dimodifikasi!
-        #       DecisionTree tidak punya coef_/intercept_. Gunakan pendekatan
-        #       alternatif, misalnya: serialisasi struktur pohon sebagai array.
-        #
-        #   Jika memilih NaiveBayes:
-        #     self.model = GaussianNB()
-        #     → get_weights() ambil: theta_ (mean) dan var_ (variance)
-        #     → set_weights() assign: theta_ dan var_
-        #       Ini tetap kompatibel dengan FedAvg (average mean & variance)!
-        #
-        #   Jika memilih KNN atau RandomForest:
-        #     ⚠️  Diskusikan dulu dengan instruktur —
-        #         model ini TIDAK langsung kompatibel dengan FedAvg.
-        #         Anda perlu merancang mekanisme agregasi alternatif.
-        #
-        # DOKUMENTASIKAN alasan pilihan Anda di laporan!
-        # =====================================================================
-        self.model = LogisticRegression(
-            max_iter=1000,
-            solver="lbfgs",
-            multi_class="auto",
-            C=1.0,
-            random_state=42,
-        )
-        self.scaler = StandardScaler()
-        self._initialized = False
-
-    def get_weights(self) -> dict:
-        """Ambil koefisien model sebagai 'weights' untuk dikirim ke server."""
-        if not self._initialized:
-            # Kembalikan bobot nol sebagai inisialisasi awal
-            return {
-                "coef": np.zeros((self.num_classes if self.num_classes > 2 else 1,
-                                  self.num_features)),
-                "intercept": np.zeros(self.num_classes if self.num_classes > 2 else 1),
-            }
-        # =====================================================================
-        # TODO [CHALLENGE 4 - WAJIB] : Ambil bobot (koefisien) dari model
-        # =====================================================================
-        # LogisticRegression menyimpan koefisiennya di:
-        #   self.model.coef_      — matriks (n_classes, n_features)
-        #   self.model.intercept_ — vektor (n_classes,)
-        #
-        # Kembalikan dict dengan key "coef" dan "intercept".
-        # Gunakan .copy() agar tidak terjadi aliasing (bug referensi).
-        # Contoh struktur return:
-        #   return {"coef": ???, "intercept": ???}
-        # =====================================================================
-        raise NotImplementedError(
-            "[CHALLENGE 4] Implementasikan get_weights() di client.py!\n"
-            "Ambil self.model.coef_ dan self.model.intercept_"
-        )
-
-    def set_weights(self, weights: dict):
-        """Terapkan global weights dari server ke model lokal."""
-        if not self._initialized:
-            # Inisialisasi model dummy agar atribut (coef_, intercept_) tersedia
-            dummy_X = np.random.randn(10, self.num_features)
-            dummy_y = np.random.randint(0, self.num_classes, 10)
-            self.model.fit(dummy_X, dummy_y)
-            self._initialized = True
-        # =====================================================================
-        # TODO [CHALLENGE 5 - WAJIB] : Terapkan global weights ke model lokal
-        # =====================================================================
-        # Setelah menerima global_weights dari server, model lokal harus
-        # di-update agar dimulai dari titik agregat, bukan dari nol.
-        #
-        # Tugas:
-        #   1. Set self.model.coef_      = nilai "coef" dari dict weights
-        #   2. Set self.model.intercept_ = nilai "intercept" dari dict weights
-        # Gunakan .copy() untuk menghindari aliasing.
-        # =====================================================================
-        raise NotImplementedError(
-            "[CHALLENGE 5] Implementasikan set_weights() di client.py!\n"
-            "Assign weights['coef'] dan weights['intercept'] ke model."
-        )
-
-    def fit(self, X: np.ndarray, y: np.ndarray):
-        X_scaled = self.scaler.fit_transform(X)
-        self.model.fit(X_scaled, y)
-        self._initialized = True
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        X_scaled = self.scaler.transform(X)
-        return self.model.predict(X_scaled)
-
-    def score(self, X: np.ndarray, y: np.ndarray) -> dict:
-        y_pred = self.predict(X)
-        metrics = {
-            "accuracy": float(accuracy_score(y, y_pred)),
-            "f1_macro": float(f1_score(y, y_pred, average="macro", zero_division=0)),
-            "report": classification_report(y, y_pred, zero_division=0),
-        }
-        # =====================================================================
-        # TODO [CHALLENGE 6 - OPSIONAL] : Tambahkan Metrik Evaluasi Lebih Lengkap
-        # =====================================================================
-        # Tambahkan metrik berikut ke dalam dict metrics:
-        #   - "precision" : precision_score(y, y_pred, average="macro", zero_division=0)
-        #   - "recall"    : recall_score(y, y_pred, average="macro", zero_division=0)
-        #   - "confusion_matrix" : confusion_matrix(y, y_pred).tolist()
-        #                          (gunakan .tolist() agar bisa di-serialize ke JSON)
-        #
-        # Pertanyaan: Mengapa F1-score lebih informatif dari accuracy
-        # pada dataset yang tidak seimbang (imbalanced class)?
-        # =====================================================================
-        return metrics
-
-
-# ── Data Loader ───────────────────────────────────────────────────────────────
-def load_data(client_id: int, data_dir: str):
-    """
-    Load dataset milik client ini.
-    File: data/client_{client_id}/student_data.csv
-    """
+def load_data(client_id, data_dir):
     path = os.path.join(data_dir, f"client_{client_id}", "student_data.csv")
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"Dataset tidak ditemukan: {path}\n"
-            f"Jalankan dulu: python utils/prepare_dataset.py"
-        )
-
-    df = pd.read_csv(path)
-    logging.info(f"Dataset dimuat: {path} — {len(df)} baris")
-
-    # Kolom target
-    target_col = "pass"  # 0 = gagal, 1 = lulus
-
-    # Pisahkan fitur dan label
-    X = df.drop(columns=[target_col]).values.astype(float)
-    y = df[target_col].values.astype(int)
-
-    return X, y, df.drop(columns=[target_col]).columns.tolist()
+        print(f"[ERROR] File tidak ditemukan: {path}")
+        sys.exit(1)
+    df           = pd.read_csv(path)
+    feature_cols = [c for c in df.columns if c != "pass"]
+    X = df[feature_cols].values.astype(np.float32)
+    y = df["pass"].values.astype(int)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
+    )
+    print(f"[DATA] Client {client_id}: {len(df)} baris | "
+          f"train={len(X_train)}, test={len(X_test)} | "
+          f"pass_rate={y.mean():.2%}")
+    return X_train, X_test, y_train, y_test, len(df)
 
 
-# ── Client utama ──────────────────────────────────────────────────────────────
-class FederatedClient:
-    def __init__(self, args):
-        self.client_id = args.client_id
-        self.server_host = args.server_host
-        self.server_port = args.server_port
-        self.data_dir = args.data_dir
-        self.num_rounds = args.rounds
-        self.results_dir = "results"
-        os.makedirs(self.results_dir, exist_ok=True)
-
-        # Setup logger dengan client_id
-        self.logger = logging.LoggerAdapter(
-            logging.getLogger(), {"client_id": self.client_id}
-        )
-
-        # Load data
-        self.X, self.y, self.feature_names = load_data(self.client_id, self.data_dir)
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            self.X, self.y, test_size=0.2, random_state=42, stratify=self.y
-        )
-
-        num_classes = len(np.unique(self.y))
-        self.model = FLModelWrapper(
-            num_features=self.X_train.shape[1],
-            num_classes=num_classes,
-        )
-
-        self.logger.info(
-            f"Data siap — train: {len(self.X_train)}, test: {len(self.X_test)}, "
-            f"features: {self.X_train.shape[1]}, classes: {num_classes}"
-        )
-
-    def local_train(self, global_weights: dict | None):
-        """Latih model lokal, inisialisasi dari global weights jika ada."""
-        if global_weights is not None:
-            self.model.set_weights(global_weights)
-
-        # Fine-tune / train ulang dengan data lokal
-        self.model.fit(self.X_train, self.y_train)
-
-    def evaluate(self) -> dict:
-        return self.model.score(self.X_test, self.y_test)
-
-    def run(self):
-        global_weights = None
-        all_results = []
-
-        # =====================================================================
-        # TODO [CHALLENGE 7 - OPSIONAL] : Implementasikan Early Stopping
-        # =====================================================================
-        # Early stopping menghentikan training lebih awal jika akurasi tidak
-        # meningkat selama N ronde berturut-turut (mencegah overfitting & hemat waktu).
-        #
-        # Langkah:
-        #   1. Tambahkan variabel: best_accuracy = 0.0  dan  no_improve_count = 0
-        #   2. Setiap selesai satu ronde, bandingkan accuracy dengan best_accuracy
-        #   3. Jika accuracy > best_accuracy: update best_accuracy, reset no_improve_count = 0
-        #   4. Jika tidak: no_improve_count += 1
-        #   5. Jika no_improve_count >= PATIENCE (misal 3), break dari loop ronde
-        #
-        # Tambahkan argparse --patience (default 3) agar bisa diatur dari CLI.
-        # =====================================================================
-        PATIENCE = 3  # TODO [CHALLENGE 7]: gunakan args.patience jika sudah ditambahkan
-        best_accuracy = 0.0
-        no_improve_count = 0
-
-        for rnd in range(1, self.num_rounds + 1):
-            self.logger.info(f"Ronde {rnd}/{self.num_rounds} — local training...")
-
-            # 1) Latih lokal
-            self.local_train(global_weights)
-
-            # 2) Evaluasi
-            metrics = self.evaluate()
-            self.logger.info(
-                f"Ronde {rnd} | Akurasi lokal: {metrics['accuracy']:.4f} | "
-                f"F1: {metrics['f1_macro']:.4f}"
-            )
-            print(metrics["report"])
-
-            # 3) Kirim ke server
-            payload = pickle.dumps(
-                {
-                    "client_id": self.client_id,
-                    "weights": self.model.get_weights(),
-                    "num_samples": len(self.X_train),
-                    "metrics": {
-                        "accuracy": metrics["accuracy"],
-                        "f1_macro": metrics["f1_macro"],
-                    },
-                    "round": rnd,
-                }
-            )
-
-            try:
-                conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                conn.connect((self.server_host, self.server_port))
-                self.logger.info(f"Terhubung ke server {self.server_host}:{self.server_port}")
-
-                send_data(conn, payload)
-                self.logger.info(f"Weights terkirim ke server")
-
-                # 4) Terima global weights
-                raw = recv_data(conn)
-                response = pickle.loads(raw)
-                global_weights = response["global_weights"]
-                self.logger.info(f"Global weights diterima dari server (ronde {response['round']})")
-                conn.close()
-
-            except Exception as exc:
-                self.logger.error(f"Gagal terhubung ke server: {exc}")
-                break
-
-            all_results.append(
-                {"round": rnd, "accuracy": metrics["accuracy"], "f1_macro": metrics["f1_macro"]}
-            )
-
-            # =================================================================
-            # TODO [CHALLENGE 7 - OPSIONAL]: Lengkapi logika early stopping di sini
-            # =================================================================
-            # Setelah all_results.append(...), tambahkan:
-            #   if metrics["accuracy"] > best_accuracy:
-            #       best_accuracy = metrics["accuracy"]
-            #       no_improve_count = 0
-            #   else:
-            #       no_improve_count += 1
-            #   if no_improve_count >= PATIENCE:
-            #       self.logger.info(f"Early stopping pada ronde {rnd}")
-            #       break
-            # =================================================================
-
-        # Simpan hasil
-        result_path = os.path.join(
-            self.results_dir, f"client_{self.client_id}_results.json"
-        )
-        with open(result_path, "w") as f:
-            json.dump(all_results, f, indent=2)
-        self.logger.info(f"Hasil disimpan di {result_path}")
-
-        # Evaluasi final dengan global model
-        if global_weights is not None:
-            self.model.set_weights(global_weights)
-            final_metrics = self.evaluate()
-            self.logger.info(
-                f"\n{'='*50}\nEVALUASI FINAL (Global Model)\n"
-                f"Akurasi: {final_metrics['accuracy']:.4f}\n"
-                f"F1 Macro: {final_metrics['f1_macro']:.4f}\n"
-                f"{final_metrics['report']}\n{'='*50}"
-            )
+def save_results(client_id, history, results_dir="./results"):
+    os.makedirs(results_dir, exist_ok=True)
+    path = os.path.join(results_dir, f"client_{client_id}_results.json")
+    with open(path, "w") as f:
+        json.dump({"client_id": client_id, "rounds": history}, f, indent=2)
+    print(f"[INFO] Hasil disimpan: {path}")
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Federated Learning Client")
-    parser.add_argument("--client_id", type=int, required=True, help="ID client (1-4)")
-    parser.add_argument("--server_host", type=str, default="127.0.0.1", help="IP server")
-    parser.add_argument("--server_port", type=int, default=9999, help="Port server")
-    parser.add_argument("--data_dir", type=str, default="./data", help="Direktori data")
-    parser.add_argument("--rounds", type=int, default=10, help="Jumlah ronde federasi")
+def run_client(client_id, server_host, server_port, rounds, data_dir):
+    print("=" * 60)
+    print(f"  FL CLIENT -- Kelompok 1 | Client ID: {client_id}")
+    print(f"  Server: {server_host}:{server_port} | Rounds: {rounds}")
+    print("=" * 60)
+
+    X_train, X_test, y_train, y_test, n_samples = load_data(client_id, data_dir)
+
+    model         = FLModelWrapper()
+    early_stop    = EarlyStopping()
+    history       = []
+    best_accuracy = -np.inf
+    best_weights  = None
+
+    for round_num in range(1, rounds + 1):
+        print(f"\n{'--'*25}")
+        print(f"  RONDE {round_num}/{rounds}")
+        print(f"{'--'*25}")
+
+        # 1. Latih model lokal
+        train_metrics = model.train(X_train, y_train)
+        print(f"  [TRAIN] acc={train_metrics['train_accuracy']:.4f} | "
+              f"f1={train_metrics['train_f1']:.4f}")
+
+        # 2. Evaluasi lokal
+        local_metrics = model.evaluate(X_test, y_test)
+        print(f"  [EVAL-LOCAL]  acc={local_metrics['test_accuracy']:.4f} | "
+              f"f1={local_metrics['test_f1']:.4f} | "
+              f"prec={local_metrics['test_precision']:.4f} | "
+              f"rec={local_metrics['test_recall']:.4f}")
+        print(f"  [C6] Confusion Matrix: {local_metrics['test_confusion_matrix']}")
+
+        # 3. Reconnect ke server setiap ronde
+        connected = False
+        try:
+            print(f"  [NET] Menghubungi server {server_host}:{server_port}...")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(120)
+            sock.connect((server_host, server_port))
+            print("  [NET] Terhubung ke server.")
+            connected = True
+
+            # 4. Kirim weights
+            weights_dict = model.get_weights()
+            payload = {
+                "client_id":   client_id,
+                "num_samples": n_samples,
+                "weights":     weights_dict,
+                "metrics": {
+                    "accuracy":  local_metrics["test_accuracy"],
+                    "f1":        local_metrics["test_f1"],
+                    "precision": local_metrics["test_precision"],
+                    "recall":    local_metrics["test_recall"],
+                },
+            }
+            send_data(sock, pickle.dumps(payload))
+            print(f"  [NET] Weights dikirim. (coef shape={weights_dict['coef'].shape})")
+
+            # 5. Terima global weights
+            raw_response        = recv_data(sock)
+            server_response     = pickle.loads(raw_response)
+            global_weights_dict = server_response.get("global_weights")
+
+            if global_weights_dict is None:
+                print("  [WARN] Tidak ada global weights dari server.")
+                sock.close()
+                continue
+
+            # 6. Terapkan global weights
+            model.set_weights(global_weights_dict)
+            print("  [FL]  Global weights diterapkan ke model lokal.")
+            sock.close()
+
+        except ConnectionRefusedError:
+            print(f"  [ERROR] Koneksi ditolak — pastikan server sudah berjalan.")
+            break
+        except ConnectionError as e:
+            print(f"  [ERROR] Koneksi terputus: {e}")
+            break
+        except Exception as e:
+            print(f"  [ERROR] Error: {e}")
+            break
+
+        if not connected:
+            break
+
+        # 7. Evaluasi setelah global weights
+        global_metrics = model.evaluate(X_test, y_test)
+        print(f"  [EVAL-GLOBAL] acc={global_metrics['test_accuracy']:.4f} | "
+              f"f1={global_metrics['test_f1']:.4f} | "
+              f"prec={global_metrics['test_precision']:.4f} | "
+              f"rec={global_metrics['test_recall']:.4f}")
+
+        history.append({
+            "round":          round_num,
+            "local_metrics":  local_metrics,
+            "global_metrics": global_metrics,
+            "n_samples":      n_samples,
+        })
+
+        if global_metrics["test_accuracy"] > best_accuracy:
+            best_accuracy = global_metrics["test_accuracy"]
+            best_weights  = {k: v.copy() for k, v in model.get_weights().items()}
+            print(f"  [*] Best accuracy diperbarui: {best_accuracy:.4f}")
+
+        if early_stop.step(global_metrics["test_accuracy"]):
+            if best_weights is not None:
+                model.set_weights(best_weights)
+            break
+
+    # Evaluasi akhir
+    print("\n" + "=" * 60)
+    print("  EVALUASI AKHIR")
+    print("=" * 60)
+    final = model.evaluate(X_test, y_test)
+    print(f"  Accuracy         : {final['test_accuracy']:.4f}")
+    print(f"  F1               : {final['test_f1']:.4f}")
+    print(f"  Precision        : {final['test_precision']:.4f}")
+    print(f"  Recall           : {final['test_recall']:.4f}")
+    print(f"  Confusion Matrix : {final['test_confusion_matrix']}")
+    print(f"  Best accuracy    : {best_accuracy:.4f}")
+    print(f"  Total ronde      : {len(history)}")
+
+    save_results(client_id, history)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="FL Client -- Kelompok 1")
+    parser.add_argument("--client_id",   type=int, required=True)
+    parser.add_argument("--server_host", default=DEFAULT_SERVER_HOST)
+    parser.add_argument("--server_port", type=int, default=DEFAULT_SERVER_PORT)
+    parser.add_argument("--rounds",      type=int, default=DEFAULT_ROUNDS)
+    parser.add_argument("--data_dir",    default="./data")
     args = parser.parse_args()
 
-    client = FederatedClient(args)
-    client.run()
+    run_client(
+        client_id   = args.client_id,
+        server_host = args.server_host,
+        server_port = args.server_port,
+        rounds      = args.rounds,
+        data_dir    = args.data_dir,
+    )
+
+
+if __name__ == "__main__":
+    main()

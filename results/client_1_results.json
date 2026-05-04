@@ -1,0 +1,149 @@
+{
+  "client_id": 1,
+  "rounds": [
+    {
+      "round": 1,
+      "local_metrics": {
+        "test_accuracy": 0.9245,
+        "test_f1": 0.9009,
+        "test_precision": 0.9303,
+        "test_recall": 0.9245,
+        "test_confusion_matrix": [
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            48
+          ]
+        ]
+      },
+      "global_metrics": {
+        "test_accuracy": 0.8868,
+        "test_f1": 0.895,
+        "test_precision": 0.9067,
+        "test_recall": 0.8868,
+        "test_confusion_matrix": [
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            44
+          ]
+        ]
+      },
+      "n_samples": 261
+    },
+    {
+      "round": 2,
+      "local_metrics": {
+        "test_accuracy": 0.9245,
+        "test_f1": 0.9009,
+        "test_precision": 0.9303,
+        "test_recall": 0.9245,
+        "test_confusion_matrix": [
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            48
+          ]
+        ]
+      },
+      "global_metrics": {
+        "test_accuracy": 0.8868,
+        "test_f1": 0.895,
+        "test_precision": 0.9067,
+        "test_recall": 0.8868,
+        "test_confusion_matrix": [
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            44
+          ]
+        ]
+      },
+      "n_samples": 261
+    },
+    {
+      "round": 3,
+      "local_metrics": {
+        "test_accuracy": 0.9245,
+        "test_f1": 0.9009,
+        "test_precision": 0.9303,
+        "test_recall": 0.9245,
+        "test_confusion_matrix": [
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            48
+          ]
+        ]
+      },
+      "global_metrics": {
+        "test_accuracy": 0.8868,
+        "test_f1": 0.895,
+        "test_precision": 0.9067,
+        "test_recall": 0.8868,
+        "test_confusion_matrix": [
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            44
+          ]
+        ]
+      },
+      "n_samples": 261
+    },
+    {
+      "round": 4,
+      "local_metrics": {
+        "test_accuracy": 0.9245,
+        "test_f1": 0.9009,
+        "test_precision": 0.9303,
+        "test_recall": 0.9245,
+        "test_confusion_matrix": [
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            48
+          ]
+        ]
+      },
+      "global_metrics": {
+        "test_accuracy": 0.8868,
+        "test_f1": 0.895,
+        "test_precision": 0.9067,
+        "test_recall": 0.8868,
+        "test_confusion_matrix": [
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            44
+          ]
+        ]
+      },
+      "n_samples": 261
+    }
+  ]
+}
