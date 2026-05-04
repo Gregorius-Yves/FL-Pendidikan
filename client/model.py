@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 class FLModelWrapper:
     def __init__(self, RANDOM_SEED=42):
         self.scaler = StandardScaler()
-        self.model = LogisticRegression(max_iter=500, random_state=RANDOM_SEED, C=1.0, solver="lbfgs")
+        self.model = LogisticRegression(max_iter=500, random_state=RANDOM_SEED, C=1.0, solver="lbfgs", warm_start=True)
         self._is_fitted = False
         self._n_features = 0
 
@@ -20,7 +20,7 @@ class FLModelWrapper:
 
     def set_weights(self, weights_dict):
         if self._n_features is None:
-            raise RuntimeError("Latih model sekali sebelum set_weights().")
+            raise RuntimeError("Model trained for the first time.")
         coef = np.array(weights_dict["coef"]).flatten()
         intercept = np.array(weights_dict"coef"]).flatten()
         intercept = np.array(weights_dict["intercept"]).flatten()
@@ -40,7 +40,7 @@ class FLModelWrapper:
 
     def evaluate(self, X_test, y_test):
         if not self._is_fitted:
-            raise RuntimeError("Model belum dilatih.")
+            raise RuntimeError("Model hasn't been trained.")
         X_scaled = self.scaler.transform(X_test)
         y_pred   = self.model.predict(X_scaled)
         return self._metrics(y_test, y_pred, "test")

@@ -30,7 +30,7 @@ def load_data(client_id, data_dir, seed=42):
         stratify=stratify_arg
     )
 
-    print(f"[DATA] Client {client_id}: {len(df)} column | "
+    print(f"[DATA] Client {client_id}: {len(df)} rows | "
           f"train={len(X_train)}, test={len(X_test)} | "
           f"pass_rate={y.mean():.2%}")
 
