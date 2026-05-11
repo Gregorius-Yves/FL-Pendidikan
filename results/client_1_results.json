@@ -1,149 +1,72 @@
-{
-  "client_id": 1,
-  "rounds": [
-    {
-      "round": 1,
-      "local_metrics": {
-        "test_accuracy": 0.9245,
-        "test_f1": 0.9009,
-        "test_precision": 0.9303,
-        "test_recall": 0.9245,
-        "test_confusion_matrix": [
-          [
-            1,
-            4
-          ],
-          [
-            0,
-            48
-          ]
-        ]
-      },
-      "global_metrics": {
-        "test_accuracy": 0.8868,
-        "test_f1": 0.895,
-        "test_precision": 0.9067,
-        "test_recall": 0.8868,
-        "test_confusion_matrix": [
-          [
-            3,
-            2
-          ],
-          [
-            4,
-            44
-          ]
-        ]
-      },
-      "n_samples": 261
-    },
-    {
-      "round": 2,
-      "local_metrics": {
-        "test_accuracy": 0.9245,
-        "test_f1": 0.9009,
-        "test_precision": 0.9303,
-        "test_recall": 0.9245,
-        "test_confusion_matrix": [
-          [
-            1,
-            4
-          ],
-          [
-            0,
-            48
-          ]
-        ]
-      },
-      "global_metrics": {
-        "test_accuracy": 0.8868,
-        "test_f1": 0.895,
-        "test_precision": 0.9067,
-        "test_recall": 0.8868,
-        "test_confusion_matrix": [
-          [
-            3,
-            2
-          ],
-          [
-            4,
-            44
-          ]
-        ]
-      },
-      "n_samples": 261
-    },
-    {
-      "round": 3,
-      "local_metrics": {
-        "test_accuracy": 0.9245,
-        "test_f1": 0.9009,
-        "test_precision": 0.9303,
-        "test_recall": 0.9245,
-        "test_confusion_matrix": [
-          [
-            1,
-            4
-          ],
-          [
-            0,
-            48
-          ]
-        ]
-      },
-      "global_metrics": {
-        "test_accuracy": 0.8868,
-        "test_f1": 0.895,
-        "test_precision": 0.9067,
-        "test_recall": 0.8868,
-        "test_confusion_matrix": [
-          [
-            3,
-            2
-          ],
-          [
-            4,
-            44
-          ]
-        ]
-      },
-      "n_samples": 261
-    },
-    {
-      "round": 4,
-      "local_metrics": {
-        "test_accuracy": 0.9245,
-        "test_f1": 0.9009,
-        "test_precision": 0.9303,
-        "test_recall": 0.9245,
-        "test_confusion_matrix": [
-          [
-            1,
-            4
-          ],
-          [
-            0,
-            48
-          ]
-        ]
-      },
-      "global_metrics": {
-        "test_accuracy": 0.8868,
-        "test_f1": 0.895,
-        "test_precision": 0.9067,
-        "test_recall": 0.8868,
-        "test_confusion_matrix": [
-          [
-            3,
-            2
-          ],
-          [
-            4,
-            44
-          ]
-        ]
-      },
-      "n_samples": 261
-    }
-  ]
-}
+[
+  {
+    "round": 1,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 2,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 3,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 4,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 5,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 6,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 7,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 8,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 9,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  },
+  {
+    "round": 10,
+    "accuracy": 0.9057,
+    "f1_macro": 0.9042,
+    "precision": 0.9036,
+    "recall": 0.9057
+  }
+]

@@ -1,8 +1,8 @@
-import data
-import network
-import early_stopping
+from . import data
+from . import network
+from . import early_stopping
 import numpy as np
-import model as model_lib
+from . import model as model_lib
 
 def run_client(client_context: dict, server_host, server_port, rounds, data_dir):
     """
@@ -26,8 +26,8 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
         print(f"\n{'--'*25}")
         print(f"  ROUND {round}/{rounds}")
         print(f"{'--'*25}")
-    
-        train_metrics =  model.train(X_train, y_train)
+
+        train_metrics = model.train(X_train, y_train)
         print(f"  [TRAIN] acc={train_metrics['train_accuracy']:.4f} | "
               f"f1={train_metrics['train_f1']:.4f}")
 
@@ -38,26 +38,26 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
               f"rec={local_metrics['test_recall']:.4f}")
         print(f"  [C6] Confusion Matrix: {local_metrics['test_confusion_matrix']}")
 
-        # Connection Attempt
         weights_dict = model.get_weights()
         payload = {
-                "client_id": client_context.client_id,
-                "num_samples": n_samples,
-                "weights": weights_dict,
-                "metrics": {
-                        "accuracy": local_metrics["test_accuracy"],
-                        "f1":        local_metrics["test_f1"],
-                        "precision": local_metrics["test_precision"],
-                        "recall":    local_metrics["test_recall"],
-                        },
-                }
+            "client_id": client_context.client_id,
+            "num_samples": n_samples,
+            "weights": weights_dict,
+            "metrics": {
+                "accuracy": local_metrics["test_accuracy"],
+                "f1": local_metrics["test_f1"],
+                "precision": local_metrics["test_precision"],
+                "recall": local_metrics["test_recall"],
+            },
+        }
+
         rsp = network.server_handler_interface(server_host, server_port, payload)
 
         global_weights = rsp.get("global_weights")
 
         if global_weights is None:
-                print("  [WARN] No Global Weights from server.")
-                continue
+            print("  [WARN] No Global Weights from server.")
+            continue
 
         model.set_weights(global_weights)
 
@@ -68,15 +68,15 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
               f"rec={global_metrics['test_recall']:.4f}")
 
         history.append({
-            "round":          round,
-            "local_metrics":  local_metrics,
+            "round": round,
+            "local_metrics": local_metrics,
             "global_metrics": global_metrics,
-            "n_samples":      n_samples,
+            "n_samples": n_samples,
         })
 
         if global_metrics["test_accuracy"] > best_accuracy:
             best_accuracy = global_metrics["test_accuracy"]
-            best_weights  = {k: v.copy() for k, v in model.get_weights().items()}
+            best_weights = {k: v.copy() for k, v in model.get_weights().items()}
             print(f"  [*] Best accuracy diperbarui: {best_accuracy:.4f}")
 
         if early_stop.step(global_metrics["test_accuracy"]):
@@ -87,7 +87,9 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
     print("\n" + "=" * 60)
     print("  EVALUASI AKHIR")
     print("=" * 60)
+
     final = model.evaluate(X_test, y_test)
+
     print(f"  Accuracy         : {final['test_accuracy']:.4f}")
     print(f"  F1               : {final['test_f1']:.4f}")
     print(f"  Precision        : {final['test_precision']:.4f}")
@@ -96,4 +98,4 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
     print(f"  Best accuracy    : {best_accuracy:.4f}")
     print(f"  Total ronde      : {len(history)}")
 
-    data.save_results(client_id, history)
+    data.save_results(client_context.client_id, history)

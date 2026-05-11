@@ -18,7 +18,7 @@ import logging
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 
-from client.client import FLModelWrapper
+from client.model import FLModelWrapper
 from utils.prepare_dataset import (
     download_dataset,
     preprocess,

@@ -1,9 +1,11 @@
+import numpy as np
+
 class EarlyStopping:
     def __init__(self, patience=3, min_delta=0.001):
-        self.patience = patience
-        self.min_delta = min_delta
-        self.best_score = -np.inf
-        self.counter = 0
+        self.patience    = patience
+        self.min_delta   = min_delta
+        self.best_score  = -np.inf
+        self.counter     = 0
         self.should_stop = False
 
     def step(self, score):
@@ -15,5 +17,5 @@ class EarlyStopping:
             print(f"  [EarlyStopping] Counter: {self.counter}/{self.patience}")
             if self.counter >= self.patience:
                 self.should_stop = True
-                print(f"  [EarlyStopping] Dihentikan.")
+                print("  [EarlyStopping] Dihentikan.")
         return self.should_stop

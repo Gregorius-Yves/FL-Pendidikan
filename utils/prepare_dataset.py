@@ -159,47 +159,37 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     # - Apakah jumlah fitur bertambah? (cek df.shape)
     # - Apakah akurasi model meningkat?
     # =========================================================================
+    df["avg_grade"] = (df["G1"] + df["G2"]) / 2
+    df["grade_trend"] = df["G2"] - df["G1"]
+    df["study_fail"] = df["studytime"] * df["failures"]
 
     return df
 
 
 def split_non_iid(df: pd.DataFrame, num_clients: int) -> list[pd.DataFrame]:
     """
-    Bagi dataset secara Non-IID (heterogen) agar simulasi FL lebih realistis.
-    Setiap client mendapat distribusi data yang berbeda.
-
-    Non-IID artinya data antar client TIDAK terdistribusi identik:
-    - Beberapa client mungkin punya lebih banyak siswa lulus
-    - Beberapa client mungkin punya rentang usia yang berbeda
-    Ini mencerminkan kondisi nyata: tiap sekolah/lembaga punya karakteristik data sendiri.
+    Bagi dataset secara Non-IID menggunakan sorted chunk.
     """
-    # =========================================================================
-    # TODO [CHALLENGE 8 - WAJIB] : Implementasikan Non-IID Split
-    # =========================================================================
-    # Tugas: bagi df menjadi num_clients bagian secara Non-IID.
-    #
-    # Cara 1 (Sederhana) — Sorted Chunk:
-    #   1. Urutkan df berdasarkan kolom ["school", "age", "pass"]
-    #   2. Hitung chunk_size = len(df) // num_clients
-    #   3. Bagi menjadi num_clients potongan berurutan
-    #   4. Kembalikan list of DataFrame
-    #
-    # Cara 2 (Lebih Baik) — Stratified Non-IID:
-    #   1. Pisahkan baris pass=1 dan pass=0
-    #   2. Distribusikan secara tidak merata:
-    #      Client 1: 80% pass=1, 20% pass=0
-    #      Client 2: 60% pass=1, 40% pass=0
-    #      Client 3: 40% pass=1, 60% pass=0
-    #      Client 4: 20% pass=1, 80% pass=0
-    #   (simulasi perbedaan kualitas pendidikan antar institusi)
-    #
-    # Diskusikan: bagaimana Non-IID mempengaruhi konvergensi FedAvg?
-    # =========================================================================
-    raise NotImplementedError(
-        "[CHALLENGE 8] Implementasikan split_non_iid() di utils/prepare_dataset.py!\n"
-        "Pilih Cara 1 (sederhana) atau Cara 2 (stratified non-IID)."
-    )
 
+    df_sorted = df.sort_values(
+        by=["school", "age", "pass"]
+    ).reset_index(drop=True)
+
+    chunk_size = len(df_sorted) // num_clients
+
+    splits = []
+
+    for i in range(num_clients):
+        start = i * chunk_size
+
+        if i == num_clients - 1:
+            end = len(df_sorted)
+        else:
+            end = (i + 1) * chunk_size
+
+        splits.append(df_sorted.iloc[start:end].reset_index(drop=True))
+
+    return splits
 
 def main():
     os.makedirs(DATA_DIR, exist_ok=True)
