@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.linear_model  import LogisticRegression
+from sklearn.linear_model  import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics       import (
     accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
@@ -8,9 +8,13 @@ from sklearn.metrics       import (
 class FLModelWrapper:
     def __init__(self, num_features=None, num_classes=None, RANDOM_SEED=42):
         self.scaler      = StandardScaler()
-        self.model       = LogisticRegression(
-            max_iter=500, random_state=RANDOM_SEED,
-            C=1.0, solver="lbfgs", warm_start=True
+        self.model       = SGDClassifier(
+            loss="log_loss",
+            max_iter=10,
+            random_state=RANDOM_SEED,
+            warm_start=True,
+            learning_rate="constant",
+            eta0=0.01,
         )
         self._is_fitted  = False
         self._n_features = num_features
@@ -37,7 +41,7 @@ class FLModelWrapper:
             X_scaled = self.scaler.fit_transform(X_train)
         else:
             X_scaled = self.scaler.transform(X_train)
-        self.model.fit(X_scaled, y_train)
+        self.model.partial_fit(X_scaled, y_train, classes=np.array([0, 1]))
         self._is_fitted  = True
         self._n_features = X_train.shape[1]
         y_pred = self.model.predict(X_scaled)

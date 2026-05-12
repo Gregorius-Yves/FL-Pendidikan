@@ -1,72 +1,55 @@
-[
-  {
-    "round": 1,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 2,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 3,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 4,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 5,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 6,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 7,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 8,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 9,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  },
-  {
-    "round": 10,
-    "accuracy": 0.9057,
-    "f1_macro": 0.9042,
-    "precision": 0.9036,
-    "recall": 0.9057
-  }
-]
+{
+  "client_id": 1,
+  "rounds": [
+    {
+      "round": 1,
+      "accuracy": 0.9245,
+      "f1_macro": 0.9245
+    },
+    {
+      "round": 2,
+      "accuracy": 0.9245,
+      "f1_macro": 0.9245
+    },
+    {
+      "round": 3,
+      "accuracy": 0.9057,
+      "f1_macro": 0.9042
+    },
+    {
+      "round": 4,
+      "accuracy": 0.9057,
+      "f1_macro": 0.9042
+    },
+    {
+      "round": 5,
+      "accuracy": 0.9057,
+      "f1_macro": 0.9042
+    },
+    {
+      "round": 6,
+      "accuracy": 0.9245,
+      "f1_macro": 0.922
+    },
+    {
+      "round": 7,
+      "accuracy": 0.9245,
+      "f1_macro": 0.922
+    },
+    {
+      "round": 8,
+      "accuracy": 0.9245,
+      "f1_macro": 0.922
+    },
+    {
+      "round": 9,
+      "accuracy": 0.9245,
+      "f1_macro": 0.922
+    },
+    {
+      "round": 10,
+      "accuracy": 0.9245,
+      "f1_macro": 0.922
+    }
+  ]
+}

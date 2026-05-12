@@ -99,3 +99,6 @@ def run_client(client_context: dict, server_host, server_port, rounds, data_dir)
     print(f"  Total ronde      : {len(history)}")
 
     data.save_results(client_context.client_id, history)
+
+if __name__ == "__main__":
+    main()

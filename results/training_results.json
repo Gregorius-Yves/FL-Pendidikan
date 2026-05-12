@@ -1,52 +1,52 @@
 [
   {
     "round": 1,
-    "avg_accuracy": 0.9056500000000001,
+    "avg_accuracy": 0.8821,
     "clients": [
       {
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.9245
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9141
         }
       },
       {
         "client_id": 3,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9122
         }
       },
       {
         "client_id": 4,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.8679,
-          "f1_macro": 0.8667
+          "accuracy": 0.7925,
+          "f1_macro": 0.8002
         }
       }
     ]
   },
   {
     "round": 2,
-    "avg_accuracy": 0.9056500000000001,
+    "avg_accuracy": 0.8962249999999999,
     "clients": [
       {
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.9245
         }
       },
       {
@@ -54,30 +54,30 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9303
         }
       },
       {
         "client_id": 3,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9074
         }
       },
       {
         "client_id": 4,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.8679,
-          "f1_macro": 0.8667
+          "accuracy": 0.8302,
+          "f1_macro": 0.8339
         }
       }
     ]
   },
   {
     "round": 3,
-    "avg_accuracy": 0.9056500000000001,
+    "avg_accuracy": 0.89625,
     "clients": [
       {
         "client_id": 1,
@@ -91,31 +91,31 @@
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
         "client_id": 3,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9434,
+          "f1_macro": 0.9422
         }
       },
       {
         "client_id": 4,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.8679,
-          "f1_macro": 0.8667
+          "accuracy": 0.8302,
+          "f1_macro": 0.8316
         }
       }
     ]
   },
   {
     "round": 4,
-    "avg_accuracy": 0.9056500000000001,
+    "avg_accuracy": 0.900975,
     "clients": [
       {
         "client_id": 1,
@@ -129,31 +129,31 @@
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
         "client_id": 3,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9434,
+          "f1_macro": 0.9422
         }
       },
       {
         "client_id": 4,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.8679,
-          "f1_macro": 0.8667
+          "accuracy": 0.8491,
+          "f1_macro": 0.8491
         }
       }
     ]
   },
   {
     "round": 5,
-    "avg_accuracy": 0.9056500000000001,
+    "avg_accuracy": 0.905675,
     "clients": [
       {
         "client_id": 1,
@@ -167,16 +167,16 @@
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
         "client_id": 3,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9434,
+          "f1_macro": 0.9422
         }
       },
       {
@@ -197,16 +197,16 @@
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.922
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
@@ -214,7 +214,7 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9212
         }
       },
       {
@@ -235,16 +235,16 @@
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.922
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
@@ -252,7 +252,7 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9212
         }
       },
       {
@@ -273,16 +273,16 @@
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.922
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
@@ -290,7 +290,7 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9212
         }
       },
       {
@@ -311,16 +311,16 @@
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.922
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
@@ -328,7 +328,7 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9212
         }
       },
       {
@@ -349,16 +349,16 @@
         "client_id": 1,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9057,
-          "f1_macro": 0.9042
+          "accuracy": 0.9245,
+          "f1_macro": 0.922
         }
       },
       {
         "client_id": 2,
         "num_samples": 208,
         "metrics": {
-          "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "accuracy": 0.9057,
+          "f1_macro": 0.9115
         }
       },
       {
@@ -366,7 +366,7 @@
         "num_samples": 208,
         "metrics": {
           "accuracy": 0.9245,
-          "f1_macro": 0.9245
+          "f1_macro": 0.9212
         }
       },
       {

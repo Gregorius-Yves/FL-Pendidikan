@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 
-from client import run_client
+from client.client import run_client
 
 
 @dataclass
